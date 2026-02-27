@@ -1,5 +1,6 @@
 """
-Quick smoke test for query_accounts, query_contacts, and query_opportunities.
+Quick smoke test for query_accounts, query_contacts, query_opportunities,
+and create_case / query_cases.
 Run from the project root: python test_functions.py
 """
 
@@ -41,6 +42,28 @@ def main() -> None:
     # --- Opportunities ---
     opportunities = client.query_opportunities(limit=5)
     print_results("OPPORTUNITIES", opportunities)
+
+    # --- Create Case ---
+    print("\nCreating Case...")
+    case_payload = {
+        "Subject": "Patient Services Follow-up",
+        "Priority": "High",
+        "Description": "Follow up required on provider billing inquiry",
+    }
+    create_result = client.create_case(case_payload)
+    print_results("CREATE CASE (response)", [create_result])
+
+    case_id = create_result.get("id")
+    if not create_result.get("success") or not case_id:
+        print("[WARN] Case creation did not return success=True — skipping query-back.")
+    else:
+        # --- Query back by Id to confirm creation ---
+        soql = (
+            f"SELECT Id, CaseNumber, Subject, Priority, Description, Status, CreatedDate "
+            f"FROM Case WHERE Id = '{case_id}'"
+        )
+        confirmed = client._query(soql)
+        print_results(f"CASE queried back (Id={case_id})", confirmed)
 
     print("\nDone.")
 
