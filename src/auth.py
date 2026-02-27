@@ -7,7 +7,10 @@ Tokens are cached in-process and refreshed automatically on expiry/401.
 Environment variables (loaded from .env):
     SF_CONSUMER_KEY      Connected App / External Client App consumer key
     SF_CONSUMER_SECRET   Connected App / External Client App consumer secret
-    SF_DOMAIN            'login' (prod) or 'test' (sandbox). Default: 'login'
+    SF_MY_DOMAIN         Full My Domain hostname, e.g.
+                         orgfarm-abc123.develop.my.salesforce.com
+                         Required for External Client Apps — the generic
+                         test.salesforce.com endpoint is not supported.
     SF_API_VERSION       Salesforce API version. Default: 'v59.0'
 """
 
@@ -39,6 +42,7 @@ logger = logging.getLogger(__name__)
 _REQUIRED_ENV_VARS = (
     "SF_CONSUMER_KEY",
     "SF_CONSUMER_SECRET",
+    "SF_MY_DOMAIN",
 )
 
 
@@ -99,12 +103,12 @@ class SalesforceAuth:
         headers = auth.auth_headers()     # ready-to-use dict
     """
 
-    TOKEN_ENDPOINT = "https://{domain}.salesforce.com/services/oauth2/token"
+    TOKEN_ENDPOINT = "https://{my_domain}/services/oauth2/token"
 
     def __init__(self) -> None:
         self._consumer_key = _get_env("SF_CONSUMER_KEY")
         self._consumer_secret = _get_env("SF_CONSUMER_SECRET")
-        self._domain = os.getenv("SF_DOMAIN", "login")
+        self._my_domain = _get_env("SF_MY_DOMAIN").rstrip("/")
         self._api_version = os.getenv("SF_API_VERSION", "v59.0")
         self._token: Optional[SalesforceToken] = None
 
@@ -162,7 +166,7 @@ class SalesforceAuth:
             SalesforceAuthError: if Salesforce returns an error response.
             requests.HTTPError: on unexpected HTTP failures.
         """
-        url = self.TOKEN_ENDPOINT.format(domain=self._domain)
+        url = self.TOKEN_ENDPOINT.format(my_domain=self._my_domain)
         payload = {
             "grant_type": "client_credentials",
             "client_id": self._consumer_key,
