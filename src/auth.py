@@ -145,7 +145,7 @@ class SalesforceAuth:
 
     def rest_base_url(self) -> str:
         """Base URL for Salesforce REST API calls."""
-        return f"{self.instance_url}/services/data/{self._api_version}"
+        return f"{self.instance_url.rstrip('/')}/services/data/{self._api_version}"
 
     # ------------------------------------------------------------------
     # Internal
