@@ -18,7 +18,7 @@ The flowchart and architecture diagrams in the presentation were also generated 
 
 The full walkthrough of this project — including my thought process, consulting approach, and live demo screenshots — is available here:
 
-🔗 **[View Presentation](#)**
+🔗 🔗 **[View Presentation](./ActiveMCP-TechAssessment.pptx)**
 
 --- 
 
