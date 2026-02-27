@@ -1,15 +1,12 @@
 """
-Salesforce OAuth 2.0 - Username-Password Flow
+Salesforce OAuth 2.0 - Client Credentials Flow
 
-Exchanges Salesforce credentials for a bearer token and instance URL.
+Exchanges Connected App credentials for a bearer token and instance URL.
 Tokens are cached in-process and refreshed automatically on expiry/401.
 
 Environment variables (loaded from .env):
-    SF_CONSUMER_KEY      Connected App consumer key
-    SF_CONSUMER_SECRET   Connected App consumer secret
-    SF_USERNAME          Salesforce username
-    SF_PASSWORD          Salesforce user password
-    SF_SECURITY_TOKEN    Salesforce security token (appended to password)
+    SF_CONSUMER_KEY      Connected App / External Client App consumer key
+    SF_CONSUMER_SECRET   Connected App / External Client App consumer secret
     SF_DOMAIN            'login' (prod) or 'test' (sandbox). Default: 'login'
     SF_API_VERSION       Salesforce API version. Default: 'v59.0'
 """
@@ -42,9 +39,6 @@ logger = logging.getLogger(__name__)
 _REQUIRED_ENV_VARS = (
     "SF_CONSUMER_KEY",
     "SF_CONSUMER_SECRET",
-    "SF_USERNAME",
-    "SF_PASSWORD",
-    "SF_SECURITY_TOKEN",
 )
 
 
@@ -92,7 +86,10 @@ class SalesforceToken:
 
 class SalesforceAuth:
     """
-    Manages Salesforce authentication via the Username-Password OAuth 2.0 flow.
+    Manages Salesforce authentication via the Client Credentials OAuth 2.0 flow.
+
+    Designed for External Client Apps (and traditional Connected Apps with the
+    client credentials policy enabled). No user context is required.
 
     Usage::
 
@@ -107,9 +104,6 @@ class SalesforceAuth:
     def __init__(self) -> None:
         self._consumer_key = _get_env("SF_CONSUMER_KEY")
         self._consumer_secret = _get_env("SF_CONSUMER_SECRET")
-        self._username = _get_env("SF_USERNAME")
-        # Password and security token are concatenated as required by the flow.
-        self._password = _get_env("SF_PASSWORD") + _get_env("SF_SECURITY_TOKEN")
         self._domain = os.getenv("SF_DOMAIN", "login")
         self._api_version = os.getenv("SF_API_VERSION", "v59.0")
         self._token: Optional[SalesforceToken] = None
@@ -170,11 +164,9 @@ class SalesforceAuth:
         """
         url = self.TOKEN_ENDPOINT.format(domain=self._domain)
         payload = {
-            "grant_type": "password",
+            "grant_type": "client_credentials",
             "client_id": self._consumer_key,
             "client_secret": self._consumer_secret,
-            "username": self._username,
-            "password": self._password,
         }
 
         logger.debug("Fetching Salesforce OAuth token from %s", url)
@@ -204,8 +196,7 @@ class SalesforceAuth:
         )
 
         logger.info(
-            "Salesforce token acquired for %s (instance: %s)",
-            self._username,
+            "Salesforce token acquired (instance: %s)",
             token.instance_url,
         )
         return token
