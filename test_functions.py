@@ -27,6 +27,8 @@ def main() -> None:
     print(f"  api ver  : {auth.api_version}")
 
     client = SalesforceClient(auth)
+    print(f"  base url : {auth.rest_base_url()}")
+    print(f"  query url: {auth.rest_base_url()}/query")
 
     # --- Accounts ---
     accounts = client.query_accounts(limit=5)
